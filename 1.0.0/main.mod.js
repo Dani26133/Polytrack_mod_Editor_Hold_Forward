@@ -2,129 +2,121 @@ import { PolyMod } from "https://cdn.polymodloader.com/cb/PolyTrackMods/PolyModL
 
 class ForwardGhostPreview extends PolyMod {
     postInit = () => {
-        if (document.getElementById("inkano-forward-preview")) return;
+        if (document.getElementById("germini-preview-panel")) return;
 
+        // 1. Erstelle das Hauptfenster über sichere DOM-Methoden (verhindert Text-Bug)
         const panel = document.createElement("div");
-        panel.id = "inkano-forward-preview";
+        panel.id = "germini-preview-panel";
         panel.style.cssText = `
             position: fixed;
             right: 24px;
             top: 90px;
             width: 280px;
-            padding: 14px;
+            padding: 16px;
             z-index: 999999;
-            background: rgba(15, 19, 28, 0.96);
+            background: #0f131c;
             color: #ffffff;
-            border: 1px solid #70e0a0;
-            border-radius: 10px;
-            font: 14px Arial, sans-serif;
+            border: 2px solid #70e0a0;
+            border-radius: 12px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             pointer-events: auto;
         `;
 
-        panel.innerHTML = `
-            <div style="font-size:17px;font-weight:bold;color:#70e0a0">
-                Hold-Forward Preview <span style="font-size:12px;color:#bdc5d3">(germini_v1)</span>
-            </div>
-            <div id="inkano-status" style="margin-top:8px">
-                Status: Suche Editor-Daten...
-            </div>
-            <canvas id="inkano-trail"
-                width="250" height="150"
-                style="display:block;width:250px;height:150px;margin-top:10px;background:#080b10;border-radius:6px;">
-            </canvas>
-            <div style="font-size:11px;color:#bdc5d3;margin-top:6px">
-                Simuliert den Fahrweg im Level Maker
-            </div>
-        `;
+        // Titel
+        const titleEl = document.createElement("div");
+        titleEl.style.cssText = "font-size:16px; font-weight:bold; color:#70e0a0; margin-bottom:6px;";
+        titleEl.textContent = "Hold-Forward Preview (germini_v2)";
+        panel.appendChild(titleEl);
+
+        // Status-Text (wird jetzt garantiert angezeigt)
+        const statusEl = document.createElement("div");
+        statusEl.id = "germini-status";
+        statusEl.style.cssText = "font-size:13px; color:#ffcc00; margin-bottom:8px;";
+        statusEl.textContent = "Status: Suche Editor...";
+        panel.appendChild(statusEl);
+
+        // Canvas für die Vorschau
+        const canvas = document.createElement("canvas");
+        canvas.width = 248;
+        canvas.height = 140;
+        canvas.style.cssText = "display:block; width:248px; height:140px; background:#05070a; border-radius:6px; border: 1px solid #222c3c;";
+        panel.appendChild(canvas);
+
+        // Fußzeile
+        const footerEl = document.createElement("div");
+        footerEl.style.cssText = "font-size:11px; color:#8c96a5; margin-top:8px;";
+        footerEl.textContent = "Level Maker Path Simulator";
+        panel.appendChild(footerEl);
 
         document.body.appendChild(panel);
 
-        const canvas = panel.querySelector("#inkano-trail");
         const ctx = canvas.getContext("2d");
-        const statusEl = panel.querySelector("#inkano-status");
 
-        let animationFrameId = null;
-
+        // 2. Render- und Erkennungsschleife
         const updateLoop = () => {
-            animationFrameId = requestAnimationFrame(updateLoop);
+            requestAnimationFrame(updateLoop);
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Suche nach Editor-Instanzen und Streckendaten im globalen Scope
+            // Erweiterte Suche nach dem Level-Editor im globalen Scope
             const editorObj = window.editor || 
                               window.levelEditor || 
                               window.trackEditor || 
                               window.game?.editor ||
                               (window.gameInstance && window.gameInstance.editor);
 
-            ctx.strokeStyle = "#70e0a0";
-            ctx.lineWidth = 3;
-            ctx.lineJoin = "round";
-
             if (!editorObj) {
-                statusEl.textContent = "Status: Öffne den Level Editor!";
+                statusEl.textContent = "Status: Bitte Level Editor öffnen!";
+                statusEl.style.color = "#ff5555";
                 drawPlaceholder(ctx);
                 return;
             }
 
-            statusEl.textContent = "Status: Editor aktiv & analysiere Blocks";
+            statusEl.textContent = "Status: Editor aktiv (Hold-Forward)";
+            statusEl.style.color = "#70e0a0";
 
-            const blocks = editorObj.blocks || editorObj.track?.blocks || editorObj.currentTrack?.blocks || [];
-
-            let startPos = { x: 0, z: 0 };
-            for (let block of blocks) {
-                if (block.type === "start" || block.isStart || block.name?.includes("start")) {
-                    startPos = block.position || { x: block.x || 0, z: block.z || 0 };
-                    break;
-                }
-            }
+            // Canvas-Visualisierung für den Editor-Pfad
+            ctx.strokeStyle = "#70e0a0";
+            ctx.lineWidth = 3;
+            ctx.lineJoin = "round";
+            ctx.beginPath();
 
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-
-            ctx.beginPath();
             ctx.moveTo(centerX, centerY);
 
-            const points = [];
-            let simX = startPos.x;
-            let simZ = startPos.z;
-            let simForwardX = 0;
-            let simForwardZ = -2;
-
-            for (let i = 0; i < 25; i++) {
-                simX += simForwardX;
-                simZ += simForwardZ;
-                points.push({ x: simX, z: simZ });
-            }
-
-            const scale = 1.5;
-            for (let p of points) {
-                const canvasX = centerX + (p.x - startPos.x) * scale;
-                const canvasY = centerY + (p.z - startPos.z) * scale;
-                ctx.lineTo(canvasX, canvasY);
+            // Simulierte Strecke im Editor
+            let px = centerX;
+            let py = centerY;
+            for (let i = 0; i < 20; i++) {
+                py -= 5;
+                ctx.lineTo(px, py);
             }
             ctx.stroke();
 
+            // Startpunkt-Indikator
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(centerX - 4, centerY - 4, 8, 8);
         };
 
-        animationFrameId = requestAnimationFrame(updateLoop);
+        requestAnimationFrame(updateLoop);
     };
 }
 
 function drawPlaceholder(ctx) {
-    ctx.strokeStyle = "#70e0a0";
+    ctx.strokeStyle = "#ff5555";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(125, 130);
-    ctx.lineTo(125, 90);
-    ctx.lineTo(100, 60);
-    ctx.lineTo(150, 30);
+    ctx.moveTo(40, 100);
+    ctx.lineTo(200, 40);
     ctx.stroke();
-    
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(121, 126, 8, 8);
+
+    ctx.fillStyle = "#ff5555";
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("KEIN EDITOR ERFASST", 124, 75);
 }
 
 export let polyMod = new ForwardGhostPreview();
