@@ -4,9 +4,6 @@ class ForwardGhostPreview extends PolyMod {
     postInit = () => {
         if (document.getElementById("inkano-forward-preview")) return;
 
-        // Versionsvariable für den Titel
-        const version = "v1.0";
-
         const panel = document.createElement("div");
         panel.id = "inkano-forward-preview";
         panel.style.cssText = `
@@ -26,7 +23,7 @@ class ForwardGhostPreview extends PolyMod {
 
         panel.innerHTML = `
             <div style="font-size:17px;font-weight:bold;color:#70e0a0">
-                germini_${version}
+                Hold-Forward Preview <span style="font-size:12px;color:#bdc5d3">(germini_v1)</span>
             </div>
             <div id="inkano-status" style="margin-top:8px">
                 Status: Suche Editor-Daten...
@@ -36,7 +33,7 @@ class ForwardGhostPreview extends PolyMod {
                 style="display:block;width:250px;height:150px;margin-top:10px;background:#080b10;border-radius:6px;">
             </canvas>
             <div style="font-size:11px;color:#bdc5d3;margin-top:6px">
-                Hold-Forward Editor Preview
+                Simuliert den Fahrweg im Level Maker
             </div>
         `;
 
@@ -53,7 +50,7 @@ class ForwardGhostPreview extends PolyMod {
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Suche nach Editor-Instanzen und Streckendaten im globalen Scope
+            // Suche nach Editor-Instanzen und Streckendaten im globalen Scope
             const editorObj = window.editor || 
                               window.levelEditor || 
                               window.trackEditor || 
@@ -72,7 +69,6 @@ class ForwardGhostPreview extends PolyMod {
 
             statusEl.textContent = "Status: Editor aktiv & analysiere Blocks";
 
-            // 2. Extrahiere Blöcke / Startpunkt aus dem Editor
             const blocks = editorObj.blocks || editorObj.track?.blocks || editorObj.currentTrack?.blocks || [];
 
             let startPos = { x: 0, z: 0 };
