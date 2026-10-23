@@ -2,9 +2,10 @@ import { PolyMod } from "https://cdn.polymodloader.com/cb/PolyTrackMods/PolyModL
 
 class ForwardGhostPreview extends PolyMod {
     postInit = () => {
+        // Verhindere doppeltes Laden
         if (document.getElementById("germini-preview-panel")) return;
 
-        // 1. Erstelle das Hauptfenster über sichere DOM-Methoden (verhindert Text-Bug)
+        // 1. UI-Panel direkt und sicher erstellen
         const panel = document.createElement("div");
         panel.id = "germini-preview-panel";
         panel.style.cssText = `
@@ -14,27 +15,27 @@ class ForwardGhostPreview extends PolyMod {
             width: 280px;
             padding: 16px;
             z-index: 999999;
-            background: #0f131c;
+            background: rgba(15, 19, 28, 0.98);
             color: #ffffff;
             border: 2px solid #70e0a0;
             border-radius: 12px;
             font-family: Arial, sans-serif;
             font-size: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
             pointer-events: auto;
         `;
 
-        // Titel
+        // Titel mit Version
         const titleEl = document.createElement("div");
         titleEl.style.cssText = "font-size:16px; font-weight:bold; color:#70e0a0; margin-bottom:6px;";
-        titleEl.textContent = "Hold-Forward Preview (germini_v2)";
+        titleEl.textContent = "Hold-Forward Preview (germini_v3)";
         panel.appendChild(titleEl);
 
-        // Status-Text (wird jetzt garantiert angezeigt)
+        // Status-Anzeige (wird jetzt garantiert sofort angezeigt)
         const statusEl = document.createElement("div");
         statusEl.id = "germini-status";
         statusEl.style.cssText = "font-size:13px; color:#ffcc00; margin-bottom:8px;";
-        statusEl.textContent = "Status: Suche Editor...";
+        statusEl.textContent = "Status: Initialisiert - Warte auf Editor...";
         panel.appendChild(statusEl);
 
         // Canvas für die Vorschau
@@ -44,7 +45,7 @@ class ForwardGhostPreview extends PolyMod {
         canvas.style.cssText = "display:block; width:248px; height:140px; background:#05070a; border-radius:6px; border: 1px solid #222c3c;";
         panel.appendChild(canvas);
 
-        // Fußzeile
+        // Info-Text unten
         const footerEl = document.createElement("div");
         footerEl.style.cssText = "font-size:11px; color:#8c96a5; margin-top:8px;";
         footerEl.textContent = "Level Maker Path Simulator";
@@ -54,30 +55,32 @@ class ForwardGhostPreview extends PolyMod {
 
         const ctx = canvas.getContext("2d");
 
-        // 2. Render- und Erkennungsschleife
+        // 2. Hauptschleife für Live-Updates
         const updateLoop = () => {
             requestAnimationFrame(updateLoop);
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Erweiterte Suche nach dem Level-Editor im globalen Scope
+            // Umfassende Suche nach globalen Editor-Variablen in PolyTrack
+            // (Prüft gängige Aliases und Spiel-Objektbäume)
             const editorObj = window.editor || 
                               window.levelEditor || 
                               window.trackEditor || 
                               window.game?.editor ||
+                              window.currentEditor ||
                               (window.gameInstance && window.gameInstance.editor);
 
             if (!editorObj) {
-                statusEl.textContent = "Status: Bitte Level Editor öffnen!";
+                statusEl.textContent = "Status: Bitte öffne den Level Editor!";
                 statusEl.style.color = "#ff5555";
-                drawPlaceholder(ctx);
+                drawPlaceholder(ctx, "KEIN EDITOR ERFASST");
                 return;
             }
 
-            statusEl.textContent = "Status: Editor aktiv (Hold-Forward)";
+            statusEl.textContent = "Status: Editor aktiv & bereit";
             statusEl.style.color = "#70e0a0";
 
-            // Canvas-Visualisierung für den Editor-Pfad
+            // Zeichne Test-Vorschau für den Editor-Pfad
             ctx.strokeStyle = "#70e0a0";
             ctx.lineWidth = 3;
             ctx.lineJoin = "round";
@@ -87,16 +90,16 @@ class ForwardGhostPreview extends PolyMod {
             const centerY = canvas.height / 2;
             ctx.moveTo(centerX, centerY);
 
-            // Simulierte Strecke im Editor
+            // Beispielhafter Pfad im Editor
             let px = centerX;
             let py = centerY;
-            for (let i = 0; i < 20; i++) {
-                py -= 5;
+            for (let i = 0; i < 15; i++) {
+                py -= 6;
                 ctx.lineTo(px, py);
             }
             ctx.stroke();
 
-            // Startpunkt-Indikator
+            // Startpunkt-Marker
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(centerX - 4, centerY - 4, 8, 8);
         };
@@ -105,18 +108,18 @@ class ForwardGhostPreview extends PolyMod {
     };
 }
 
-function drawPlaceholder(ctx) {
+function drawPlaceholder(ctx, text) {
     ctx.strokeStyle = "#ff5555";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(40, 100);
-    ctx.lineTo(200, 40);
+    ctx.lineTo(208, 40);
     ctx.stroke();
 
     ctx.fillStyle = "#ff5555";
-    ctx.font = "bold 13px Arial";
+    ctx.font = "bold 12px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("KEIN EDITOR ERFASST", 124, 75);
+    ctx.fillText(text, 124, 75);
 }
 
 export let polyMod = new ForwardGhostPreview();
