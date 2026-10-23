@@ -1,21 +1,23 @@
 import { PolyMod } from "https://cdn.polymodloader.com/cb/PolyTrackMods/PolyModLoader/0.6.0/PolyTypes.js";
 
-/*
- * Forward Ghost Preview — prototype scaffold
- *
- * This first package only verifies the PolyModLoader mod structure and loads
- * into the mod list. It does NOT yet simulate PolyTrack physics or render
- * ghost cars. Those require hooking the correct simulation and rendering APIs
- * for the installed PolyModLoader build.
- */
-
 class ForwardGhostPreview extends PolyMod {
-    // Future implementation:
-    // - configurable menu keybind
-    // - W-only forward simulation
-    // - sampled future states (1 ms, 2 ms, etc.)
-    // - ghost car and optional trajectory line
-    // - configurable simulation horizon
+    postInit = () => {
+        const box = document.createElement("div");
+        box.textContent = "Forward Ghost Preview loaded";
+        box.style.cssText = `
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            z-index: 99999;
+            padding: 8px 12px;
+            background: #111d;
+            color: white;
+            font: 14px sans-serif;
+            border-radius: 6px;
+            pointer-events: none;
+        `;
+        document.body.appendChild(box);
+    };
 }
 
 export let polyMod = new ForwardGhostPreview();
