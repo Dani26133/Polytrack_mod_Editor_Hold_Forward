@@ -1,12 +1,13 @@
+
 import { PolyMod } from "https://cdn.polymodloader.com/cb/PolyTrackMods/PolyModLoader/0.6.0/PolyTypes.js";
 
-class ForwardGhostPreview extends PolyMod {
-    init = () => {
-        alert("Forward Ghost: init ran");
-    };
+// TEST A: runs as soon as the mod file is evaluated.
+window.alert("Forward Ghost test A: JavaScript file executed.");
 
+class ForwardGhostPreview extends PolyMod {
     postInit = () => {
-        alert("Forward Ghost: postInit ran");
+        // TEST B: runs after the game finishes loading.
+        window.alert("Forward Ghost test B: postInit executed.");
     };
 }
 
