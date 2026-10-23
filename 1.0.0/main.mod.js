@@ -4,6 +4,9 @@ class ForwardGhostPreview extends PolyMod {
     postInit = () => {
         if (document.getElementById("inkano-forward-preview")) return;
 
+        // Versionsvariable für den Titel
+        const version = "v1.0";
+
         const panel = document.createElement("div");
         panel.id = "inkano-forward-preview";
         panel.style.cssText = `
@@ -23,7 +26,7 @@ class ForwardGhostPreview extends PolyMod {
 
         panel.innerHTML = `
             <div style="font-size:17px;font-weight:bold;color:#70e0a0">
-                Hold-Forward Editor Preview
+                germini_${version}
             </div>
             <div id="inkano-status" style="margin-top:8px">
                 Status: Suche Editor-Daten...
@@ -33,7 +36,7 @@ class ForwardGhostPreview extends PolyMod {
                 style="display:block;width:250px;height:150px;margin-top:10px;background:#080b10;border-radius:6px;">
             </canvas>
             <div style="font-size:11px;color:#bdc5d3;margin-top:6px">
-                Simuliert den Fahrweg im Level Maker
+                Hold-Forward Editor Preview
             </div>
         `;
 
@@ -70,35 +73,27 @@ class ForwardGhostPreview extends PolyMod {
             statusEl.textContent = "Status: Editor aktiv & analysiere Blocks";
 
             // 2. Extrahiere Blöcke / Startpunkt aus dem Editor
-            // Je nach interner Struktur speichert PolyTrack Editor-Blöcke in .blocks, .track oder .data
             const blocks = editorObj.blocks || editorObj.track?.blocks || editorObj.currentTrack?.blocks || [];
 
-            // Versuche, Startposition oder Bauteile zu finden
             let startPos = { x: 0, z: 0 };
-            let hasStart = false;
-
             for (let block of blocks) {
-                // Wenn ein Startblock existiert, diesen als Ursprung nutzen
                 if (block.type === "start" || block.isStart || block.name?.includes("start")) {
                     startPos = block.position || { x: block.x || 0, z: block.z || 0 };
-                    hasStart = true;
                     break;
                 }
             }
 
-            // Wenn keine expliziten Blöcke gefunden wurden, nutzen wir den Editor-Fokus oder Standardwerte
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
 
-            // Simulierte Trajektorie für Hold-Forward (geradeaus / Kurven anhand der Blockabfolge)
             const points = [];
             let simX = startPos.x;
             let simZ = startPos.z;
             let simForwardX = 0;
-            let simForwardZ = -2; // Standard-Fahrtrichtung im Editor
+            let simForwardZ = -2;
 
             for (let i = 0; i < 25; i++) {
                 simX += simForwardX;
@@ -114,7 +109,6 @@ class ForwardGhostPreview extends PolyMod {
             }
             ctx.stroke();
 
-            // Startpunkt-Marker
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(centerX - 4, centerY - 4, 8, 8);
         };
