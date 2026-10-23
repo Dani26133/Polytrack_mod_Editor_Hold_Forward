@@ -43,78 +43,90 @@ class ForwardGhostPreview extends PolyMod {
         const ctx = canvas.getContext("2d");
         const statusEl = panel.querySelector("#inkano-status");
 
-        // Haupt-Loop für die Vorhersage und das Rendern
-        const updateLoop = () => {
-            requestAnimationFrame(updateLoop);
+        let animationFrameId = null;
 
-            // Canvas leeren
+        const updateLoop = () => {
+            animationFrameId = requestAnimationFrame(updateLoop);
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Versuch, das Auto / die Spielphysik im globalen Scope oder Three.js Scene zu finden
-            // PolyTrack speichert Fahrzeuge oft in globalen Variablen, Game-Managern oder der Szene.
-            const gameObj = window.game || window.player || window.car || 
-                            (window.activeScene && window.activeScene.player);
+            // Umfassende und sichere Suche nach dem Spielobjekt / Fahrzeug
+            const gameObj = window.game || 
+                            window.car || 
+                            window.player || 
+                            (window.gameInstance && window.gameInstance.car) ||
+                            (window.scene && window.scene.player) ||
+                            findCarInScene();
 
             ctx.strokeStyle = "#70e0a0";
             ctx.lineWidth = 3;
             ctx.lineJoin = "round";
 
             if (!gameObj) {
-                statusEl.textContent = "Status: Kein aktives Spiel/Fahrzeug gefunden";
-                // Platzhalter / Test-Muster zeichnen, wenn kein Objekt gefunden wurde
+                statusEl.textContent = "Status: Kein Auto gefunden (Spielstand aktiv?)";
                 drawPlaceholder(ctx);
                 return;
             }
 
             statusEl.textContent = "Status: Vorhersage aktiv";
 
-            // Beispielhafte Extraktion von Positions- und Geschwindigkeitsdaten
-            // (Die genauen Eigenschaftsnamen hängen von der internen PolyTrack-Engine ab)
-            const posX = gameObj.position ? gameObj.position.x : (gameObj.x || 0);
-            const posZ = gameObj.position ? gameObj.position.z : (gameObj.z || 0);
-            const velocity = gameObj.velocity || { x: 0, z: 0 };
+            // Robuste Extraktion von Position und Geschwindigkeit (mit Fallbacks)
+            const posX = gameObj.position?.x ?? gameObj.x ?? 0;
+            const posZ = gameObj.position?.z ?? gameObj.z ?? 0;
+            const velocity = gameObj.velocity || gameObj.body?.velocity || { x: 0, z: 0 };
 
-            // Generiere einfache Vorhersagepunkte für die nächsten Ticks
             const points = [];
             let simX = posX;
             let simZ = posZ;
-            let simVx = velocity.x;
-            let simVz = velocity.z;
+            let simVx = velocity.x ?? 0;
+            let simVz = velocity.z ?? 0;
 
+            // Vorhersage über 20 Ticks mit leichter Dämpfung
             for (let i = 0; i < 20; i++) {
                 simX += simVx;
                 simZ += simVz;
-                // Einfache Dämpfung / Reibungs-Simulation für die Vorschau
                 simVx *= 0.95;
                 simVz *= 0.95;
                 points.push({ x: simX, z: simZ });
             }
 
-            // Auf Mini-Canvas projizieren (Zentrierung auf das Auto)
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
 
-            if (points.length > 0) {
-                // Skalierungsfaktor für die Ansicht
-                const scale = 2.0;
-                for (let p of points) {
-                    const canvasX = centerX + (p.x - posX) * scale;
-                    const canvasY = centerY - (p.z - posZ) * scale; // Invertierte Z-Achse für 2D-Ansicht
-                    ctx.lineTo(canvasX, canvasY);
-                }
+            const scale = 2.0;
+            for (let p of points) {
+                const canvasX = centerX + (p.x - posX) * scale;
+                const canvasY = centerY - (p.z - posZ) * scale;
+                ctx.lineTo(canvasX, canvasY);
             }
             ctx.stroke();
 
-            // Fahrzeug-Punkt in der Mitte
+            // Fahrzeug-Marker in der Mitte
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(centerX - 4, centerY - 4, 8, 8);
         };
 
-        requestAnimationFrame(updateLoop);
+        animationFrameId = requestAnimationFrame(updateLoop);
     };
+}
+
+// Hilfsfunktion: Durchsucht die Three.js-Szene nach einem passenden Fahrzeugobjekt
+function findCarInScene() {
+    try {
+        if (window.scene && window.scene.children) {
+            for (let child of window.scene.children) {
+                if (child && child.type === "Group" && child.position && (child.velocity || child.speed)) {
+                    return child;
+                }
+            }
+        }
+    } catch (e) {
+        // Fehler im Suchlauf abfangen, um Endlosschleifen/Abstürze zu verhindern
+    }
+    return null;
 }
 
 function drawPlaceholder(ctx) {
